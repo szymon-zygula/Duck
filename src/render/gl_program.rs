@@ -1,6 +1,7 @@
 use super::shader::Shader;
 use crate::primitives::color::Color;
 use glow::{self, HasContext};
+use nalgebra::{Matrix2, Matrix3, Matrix4};
 
 pub struct GlProgram<'gl> {
     handle: u32,
@@ -8,11 +9,12 @@ pub struct GlProgram<'gl> {
 }
 
 macro_rules! fn_set_uniform {
-    ($type:ty, $fn_name:ident) => {
-        pub fn $fn_name(&self, name: &str, data: $type) {
+    ($type:ty, $fn_name:ident, $raw_fn_name:ident) => {
+        pub fn $fn_name(&self, name: &str, data: &$type) {
             unsafe {
                 let location = self.gl.get_uniform_location(self.handle, name).unwrap();
-                self.gl.$fn_name(Some(&location), false, data);
+                self.gl
+                    .$raw_fn_name(Some(&location), false, data.as_slice());
             }
         }
     };
@@ -53,9 +55,21 @@ impl<'gl> GlProgram<'gl> {
         Self::with_shaders(gl, &shaders.iter().collect::<Vec<&Shader>>())
     }
 
-    fn_set_uniform!(&[f32], uniform_matrix_2_f32_slice);
-    fn_set_uniform!(&[f32], uniform_matrix_3_f32_slice);
-    fn_set_uniform!(&[f32], uniform_matrix_4_f32_slice);
+    fn_set_uniform!(
+        Matrix2<f32>,
+        uniform_matrix_2_f32,
+        uniform_matrix_2_f32_slice
+    );
+    fn_set_uniform!(
+        Matrix3<f32>,
+        uniform_matrix_3_f32,
+        uniform_matrix_3_f32_slice
+    );
+    fn_set_uniform!(
+        Matrix4<f32>,
+        uniform_matrix_4_f32,
+        uniform_matrix_4_f32_slice
+    );
 
     pub fn uniform_f32(&self, name: &str, data: f32) {
         unsafe {

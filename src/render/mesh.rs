@@ -1,4 +1,4 @@
-use crate::{primitives::vertex::Vertex, render::opengl};
+use crate::primitives::vertex::Vertex;
 use nalgebra::{Point3, Vector2, Vector3};
 
 #[derive(Debug)]

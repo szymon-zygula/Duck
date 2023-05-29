@@ -45,7 +45,7 @@ impl BezierBSpline {
         deboor
     }
 
-    fn value(&self, t: f32) -> Point3<f32> {
+    pub fn value(&self, t: f32) -> Point3<f32> {
         Point3::new(self.x_t.value(t), self.y_t.value(t), self.z_t.value(t))
     }
 }

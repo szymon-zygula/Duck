@@ -1,7 +1,11 @@
-pub mod math;
-pub mod render;
 pub mod camera;
-pub mod mouse;
-pub mod window;
-pub mod primitives;
 pub mod constants;
+pub mod math;
+pub mod mouse;
+pub mod primitives;
+pub mod render;
+pub mod shaders;
+pub mod utils;
+pub mod window;
+pub mod duck_app;
+pub mod keyboard;

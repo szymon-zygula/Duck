@@ -1,50 +1,76 @@
-use crate::{math::affine::transforms, mouse::MouseState, window::Window};
+use crate::math::affine::transforms;
 use glutin::dpi::PhysicalSize;
-use nalgebra::{Matrix4, Point3, Point4};
+use nalgebra::{Matrix4, Point3, Point4, Vector3, Vector4};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Camera {
-    pub view_basis: Matrix4<f32>,
+    pub position: Point3<f32>,
+    pub angle_y: f32,
+    pub angle_x: f32,
+
     pub resolution: PhysicalSize<u32>,
+
     pub near_plane: f32,
     pub far_plane: f32,
     pub fov: f32,
 }
 
 impl Camera {
-    const ROTATION_SPEED: f32 = 0.05;
-    const MOVEMENT_SPEED: f32 = 0.01;
-    const SCROLL_SPEED: f32 = 0.2;
-
     pub fn new() -> Camera {
         Camera {
-            view_basis: Matrix4::identity(),
+            position: Point3::origin(),
+            angle_y: 0.0,
+            angle_x: 0.0,
+
             resolution: PhysicalSize::new(0, 0),
+
             near_plane: 0.1,
             far_plane: 10000.0,
             fov: std::f32::consts::PI * 0.5,
         }
     }
 
-    pub fn update_from_mouse(&mut self, mouse: &mut MouseState, window: &Window) -> bool {
-        let mouse_delta = mouse.position_delta();
-        let scroll_delta = mouse.scroll_delta();
-
-        (mouse_delta.x != 0.0 || mouse_delta.y != 0.0 || scroll_delta != 0.0)
-            && !window.imgui_using_mouse()
+    pub fn position(&self) -> Point3<f32> {
+        self.position
     }
 
-    pub fn position(&self) -> Point3<f32> {
-        let homogeneous_position = self.inverse_view_transform() * Point4::new(0.0, 0.0, 0.0, 1.0);
-        Point3::from_homogeneous(homogeneous_position.coords).unwrap()
+    pub fn set_position(&mut self, position: Point3<f32>) {
+        self.position = position;
+    }
+
+    pub fn view_dir(&self) -> Vector3<f32> {
+        Vector3::from_homogeneous(
+            transforms::rotate_y(self.angle_y)
+                * transforms::rotate_x(self.angle_x)
+                * Vector4::new(0.0, 0.0, -1.0, 0.0),
+        )
+        .unwrap()
+    }
+
+    pub fn left_dir(&self) -> Vector3<f32> {
+        Vector3::from_homogeneous(
+            transforms::rotate_y(self.angle_y) * Vector4::new(-1.0, 0.0, 0.0, 0.0),
+        )
+        .unwrap()
+    }
+
+    pub fn up_dir(&self) -> Vector3<f32> {
+        Vector3::from_homogeneous(
+            transforms::rotate_x(self.angle_x) * Vector4::new(0.0, 1.0, 0.0, 0.0),
+        )
+        .unwrap()
     }
 
     pub fn view_transform(&self) -> Matrix4<f32> {
-        self.view_basis.transpose()
+        transforms::rotate_x(-self.angle_x)
+            * transforms::rotate_y(-self.angle_y)
+            * transforms::translate(-self.position.coords)
     }
 
     pub fn inverse_view_transform(&self) -> Matrix4<f32> {
-        self.view_basis
+        transforms::translate(self.position.coords)
+            * transforms::rotate_y(self.angle_y)
+            * transforms::rotate_x(self.angle_x)
     }
 
     pub fn aspect_ratio(&self) -> f32 {

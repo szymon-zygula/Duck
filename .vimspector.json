@@ -1,0 +1,12 @@
+{
+  "configurations": {
+    "Duck": {
+      "adapter": "CodeLLDB",
+      "filetypes": [ "rust" ],
+      "configuration": {
+        "request": "launch",
+        "program": "${workspaceRoot}/target/debug/duck"
+      }
+    }
+  }
+}
