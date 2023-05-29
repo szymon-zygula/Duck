@@ -62,7 +62,7 @@ impl<'gl> GlMesh<'gl> {
         Self {
             vertex_buffer,
             element_buffer,
-            element_count: mesh.triangles.len() as u32,
+            element_count: 3 * mesh.triangles.len() as u32,
             vertex_array,
             gl,
         }

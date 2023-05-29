@@ -1,6 +1,6 @@
 use crate::math::affine::transforms;
 use glutin::dpi::PhysicalSize;
-use nalgebra::{Matrix4, Point3, Point4, Vector3, Vector4};
+use nalgebra::{Matrix4, Point3, Vector3, Vector4};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Camera {

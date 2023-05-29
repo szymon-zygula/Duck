@@ -50,7 +50,8 @@ impl<'gl> DuckApp<'gl> {
             keyboard: KeyboardState::new(),
 
             duck,
-            duck_mtx: transforms::uniform_scale(0.01),
+            duck_mtx: transforms::translate(Vector3::new(0.0, 0.0, -3.0))
+                * transforms::uniform_scale(0.01),
         }
     }
 
@@ -152,7 +153,8 @@ impl<'gl> DuckApp<'gl> {
 
     pub fn control_ui(&mut self, ui: &mut imgui::Ui) {
         ui.window("Control")
-            .size([500.0, 500.0], imgui::Condition::Once)
+            .size([400.0, 200.0], imgui::Condition::Once)
+            .position([0.0, 0.0], imgui::Condition::Once)
             .build(|| {
                 ui.text("Duck environment control");
                 let position = self.camera.position();
