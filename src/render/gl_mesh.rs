@@ -1,7 +1,7 @@
 use super::{gl_drawable::GlDrawable, mesh::Mesh, opengl};
 use crate::{primitives::vertex::Vertex, utils};
 use glow::HasContext;
-use nalgebra::Point3;
+use nalgebra::{Point3, Vector3};
 
 pub struct GlMesh<'gl> {
     vertex_buffer: u32,
@@ -45,7 +45,7 @@ impl<'gl> GlMesh<'gl> {
                 std::mem::size_of::<Vertex>() as i32,
                 std::mem::size_of::<Point3<f32>>() as i32,
             );
-            gl.enable_vertex_attrib_array(0);
+            gl.enable_vertex_attrib_array(1);
 
             // Texture coords
             gl.vertex_attrib_pointer_f32(
@@ -54,9 +54,10 @@ impl<'gl> GlMesh<'gl> {
                 glow::FLOAT,
                 false,
                 std::mem::size_of::<Vertex>() as i32,
-                2 * std::mem::size_of::<Point3<f32>>() as i32,
+                std::mem::size_of::<Point3<f32>>() as i32
+                    + std::mem::size_of::<Vector3<f32>>() as i32,
             );
-            gl.enable_vertex_attrib_array(0);
+            gl.enable_vertex_attrib_array(2);
         });
 
         Self {

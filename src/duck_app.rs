@@ -4,7 +4,10 @@ use crate::{
     keyboard::KeyboardState,
     math::affine::transforms,
     mouse::MouseState,
-    render::{gl_drawable::GlDrawable, gl_mesh::GlMesh, mesh::Mesh, shader_manager::ShaderManager},
+    render::{
+        gl_drawable::GlDrawable, gl_mesh::GlMesh, gl_texture::GlTexture, mesh::Mesh,
+        shader_manager::ShaderManager, texture::Texture,
+    },
     shaders,
 };
 use glow::HasContext;
@@ -13,7 +16,7 @@ use glutin::{
     event::{Event, VirtualKeyCode, WindowEvent},
 };
 use nalgebra::{Matrix4, Vector3};
-use std::time::Duration;
+use std::{path::Path, time::Duration};
 
 pub struct DuckApp<'gl> {
     gl: &'gl glow::Context,
@@ -25,7 +28,8 @@ pub struct DuckApp<'gl> {
     mouse: MouseState,
     keyboard: KeyboardState,
 
-    duck: GlMesh<'gl>,
+    duck_mesh: GlMesh<'gl>,
+    duck_texture: GlTexture<'gl>,
     duck_mtx: Matrix4<f32>,
 }
 
@@ -34,8 +38,11 @@ impl<'gl> DuckApp<'gl> {
     const CAMERA_MOVEMENT_SPEED: f32 = 1.0;
 
     pub fn init(gl: &'gl glow::Context) -> Self {
-        let duck = Mesh::from_file(std::path::Path::new(DUCK_MODEL_PATH));
-        let duck = GlMesh::new(gl, duck);
+        let duck = Mesh::from_file(Path::new(DUCK_MODEL_PATH));
+        let duck_mesh = GlMesh::new(gl, duck);
+
+        let duck_texture = Texture::from_file(Path::new(&DUCK_TEXTURE_PATH));
+        let duck_texture = GlTexture::new(gl, &duck_texture);
 
         Self::init_gl(gl);
 
@@ -49,7 +56,8 @@ impl<'gl> DuckApp<'gl> {
             mouse: MouseState::new(),
             keyboard: KeyboardState::new(),
 
-            duck,
+            duck_mesh,
+            duck_texture,
             duck_mtx: transforms::translate(Vector3::new(0.0, 0.0, -3.0))
                 * transforms::uniform_scale(0.01),
         }
@@ -142,13 +150,14 @@ impl<'gl> DuckApp<'gl> {
 
     fn render_duck(&self) {
         let program = self.shader_manager.program("duck");
-
         program.enable();
         program.uniform_matrix_4_f32("model_transform", &self.duck_mtx);
         program.uniform_matrix_4_f32("view_transform", &self.camera.view_transform());
         program.uniform_matrix_4_f32("projection_transform", &self.camera.projection_transform());
 
-        self.duck.draw();
+        self.duck_texture.bind();
+
+        self.duck_mesh.draw();
     }
 
     pub fn control_ui(&mut self, ui: &mut imgui::Ui) {
