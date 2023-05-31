@@ -6,3 +6,7 @@ pub fn slice_as_raw<T>(slice: &[T]) -> &[u8] {
         )
     }
 }
+
+pub fn normal_f32_to_u8(val: f32) -> u8 {
+    (val * 127.0) as u8 + 127
+}

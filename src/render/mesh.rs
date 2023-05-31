@@ -1,19 +1,17 @@
-use crate::primitives::vertex::Vertex;
+use crate::primitives::vertex::{DuckVertex, SimpleVertex, Vertex};
 use nalgebra::{Point3, Vector2, Vector3};
 
 #[derive(Debug)]
 pub struct ParseError;
 
-pub struct Triangle {
-    pub indices: [u32; 3],
-}
+pub struct Triangle([u32; 3]);
 
-pub struct Mesh {
-    pub vertices: Vec<Vertex>,
+pub struct Mesh<V: Vertex> {
+    pub vertices: Vec<V>,
     pub triangles: Vec<Triangle>,
 }
 
-impl Mesh {
+impl Mesh<DuckVertex> {
     pub fn from_file(path: &std::path::Path) -> Self {
         let path_string = path.to_str().expect("Cannot convert path to string");
         let error_msg = format!("Could not load mesh at {}", path_string);
@@ -46,13 +44,13 @@ impl Mesh {
         string.parse().map_err(|_| ParseError {})
     }
 
-    pub fn parse_vertex(string: &str) -> Result<Vertex, ParseError> {
+    pub fn parse_vertex(string: &str) -> Result<DuckVertex, ParseError> {
         let nums: Vec<_> = string.split(' ').flat_map(|s| s.parse()).collect();
         if nums.len() != 8 {
             return Err(ParseError {});
         }
 
-        Ok(Vertex {
+        Ok(DuckVertex {
             position: Point3::new(nums[0], nums[1], nums[2]),
             normal: Vector3::new(nums[3], nums[4], nums[5]),
             tex: Vector2::new(nums[6], nums[7]),
@@ -65,8 +63,24 @@ impl Mesh {
             return Err(ParseError {});
         }
 
-        Ok(Triangle {
-            indices: [nums[0], nums[1], nums[2]],
-        })
+        Ok(Triangle([nums[0], nums[1], nums[2]]))
+    }
+}
+
+impl Mesh<SimpleVertex> {
+    pub fn rect() -> Self {
+        let vertices = vec![
+            SimpleVertex(Point3::new(0.0, 0.0, 0.0)),
+            SimpleVertex(Point3::new(1.0, 0.0, 0.0)),
+            SimpleVertex(Point3::new(1.0, 0.0, 1.0)),
+            SimpleVertex(Point3::new(0.0, 0.0, 1.0)),
+        ];
+
+        let triangles = vec![Triangle([0, 1, 2]), Triangle([0, 2, 3])];
+
+        Self {
+            vertices,
+            triangles,
+        }
     }
 }

@@ -1,11 +1,13 @@
 pub mod camera;
 pub mod constants;
+pub mod duck_app;
+pub mod keyboard;
 pub mod math;
 pub mod mouse;
 pub mod primitives;
 pub mod render;
 pub mod shaders;
 pub mod utils;
+pub mod water;
+pub mod water_texture;
 pub mod window;
-pub mod duck_app;
-pub mod keyboard;

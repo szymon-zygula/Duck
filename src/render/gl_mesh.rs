@@ -1,7 +1,6 @@
 use super::{gl_drawable::GlDrawable, mesh::Mesh, opengl};
 use crate::{primitives::vertex::Vertex, utils};
 use glow::HasContext;
-use nalgebra::{Point3, Vector3};
 
 pub struct GlMesh<'gl> {
     vertex_buffer: u32,
@@ -12,7 +11,7 @@ pub struct GlMesh<'gl> {
 }
 
 impl<'gl> GlMesh<'gl> {
-    pub fn new(gl: &'gl glow::Context, mesh: Mesh) -> Self {
+    pub fn new<V: Vertex>(gl: &'gl glow::Context, mesh: &Mesh<V>) -> Self {
         let vertex_buffer = unsafe { gl.create_buffer() }.unwrap();
         let element_buffer = unsafe { gl.create_buffer() }.unwrap();
 
@@ -25,39 +24,7 @@ impl<'gl> GlMesh<'gl> {
             gl.bind_buffer(glow::ELEMENT_ARRAY_BUFFER, Some(element_buffer));
             gl.buffer_data_u8_slice(glow::ELEMENT_ARRAY_BUFFER, raw_elements, glow::STATIC_DRAW);
 
-            // Positions
-            gl.vertex_attrib_pointer_f32(
-                0,
-                3,
-                glow::FLOAT,
-                false,
-                std::mem::size_of::<Vertex>() as i32,
-                0,
-            );
-            gl.enable_vertex_attrib_array(0);
-
-            // Normals
-            gl.vertex_attrib_pointer_f32(
-                1,
-                3,
-                glow::FLOAT,
-                false,
-                std::mem::size_of::<Vertex>() as i32,
-                std::mem::size_of::<Point3<f32>>() as i32,
-            );
-            gl.enable_vertex_attrib_array(1);
-
-            // Texture coords
-            gl.vertex_attrib_pointer_f32(
-                2,
-                2,
-                glow::FLOAT,
-                false,
-                std::mem::size_of::<Vertex>() as i32,
-                std::mem::size_of::<Point3<f32>>() as i32
-                    + std::mem::size_of::<Vector3<f32>>() as i32,
-            );
-            gl.enable_vertex_attrib_array(2);
+            V::set_vertex_attrib_pointers(gl);
         });
 
         Self {

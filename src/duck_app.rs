@@ -4,11 +4,13 @@ use crate::{
     keyboard::KeyboardState,
     math::affine::transforms,
     mouse::MouseState,
+    primitives::vertex::SimpleVertex,
     render::{
         gl_drawable::GlDrawable, gl_mesh::GlMesh, gl_texture::GlTexture, mesh::Mesh,
         shader_manager::ShaderManager, texture::Texture,
     },
     shaders,
+    water_texture::WaterTexture,
 };
 use glow::HasContext;
 use glutin::{
@@ -31,18 +33,26 @@ pub struct DuckApp<'gl> {
     duck_mesh: GlMesh<'gl>,
     duck_texture: GlTexture<'gl>,
     duck_mtx: Matrix4<f32>,
+
+    water_texture: WaterTexture<'gl>,
+    water_mesh: GlMesh<'gl>,
 }
 
 impl<'gl> DuckApp<'gl> {
     const CAMERA_ROTATION_SPEED: f32 = 0.5;
     const CAMERA_MOVEMENT_SPEED: f32 = 1.0;
 
+    const WATER_SAMPLES: usize = 256;
+    const DEFAULT_WAVE_SPEED: f32 = 1.0;
+
     pub fn init(gl: &'gl glow::Context) -> Self {
         let duck = Mesh::from_file(Path::new(DUCK_MODEL_PATH));
-        let duck_mesh = GlMesh::new(gl, duck);
+        let duck_mesh = GlMesh::new(gl, &duck);
 
         let duck_texture = Texture::from_file(Path::new(&DUCK_TEXTURE_PATH));
         let duck_texture = GlTexture::new(gl, &duck_texture);
+
+        let water_mesh = Mesh::<SimpleVertex>::rect();
 
         Self::init_gl(gl);
 
@@ -60,6 +70,9 @@ impl<'gl> DuckApp<'gl> {
             duck_texture,
             duck_mtx: transforms::translate(Vector3::new(0.0, 0.0, -3.0))
                 * transforms::uniform_scale(0.01),
+
+            water_texture: WaterTexture::new(gl, Self::WATER_SAMPLES, Self::DEFAULT_WAVE_SPEED),
+            water_mesh: GlMesh::new(gl, &water_mesh),
         }
     }
 
@@ -73,6 +86,7 @@ impl<'gl> DuckApp<'gl> {
     }
 
     pub fn update(&mut self, delta: Duration) {
+        self.water_texture.update(delta);
         self.update_position(delta);
         self.update_view(delta);
     }
@@ -100,8 +114,7 @@ impl<'gl> DuckApp<'gl> {
             displacement -= left_dir;
         }
 
-        let displacement =
-            displacement * Self::CAMERA_MOVEMENT_SPEED * delta.as_micros() as f32 / 1000.0 / 1000.0;
+        let displacement = displacement * Self::CAMERA_MOVEMENT_SPEED * delta.as_secs_f32();
         let new_position = position + displacement;
 
         self.camera.set_position(new_position);
@@ -118,14 +131,10 @@ impl<'gl> DuckApp<'gl> {
 
         if self.mouse.is_left_button_down() {
             self.camera.angle_y -=
-                mouse_delta.0 as f32 * delta.as_micros() as f32 * Self::CAMERA_ROTATION_SPEED
-                    / 1000.0
-                    / 1000.0;
+                mouse_delta.0 as f32 * delta.as_secs_f32() * Self::CAMERA_ROTATION_SPEED;
 
             self.camera.angle_x -=
-                mouse_delta.1 as f32 * delta.as_micros() as f32 * Self::CAMERA_ROTATION_SPEED
-                    / 1000.0
-                    / 1000.0;
+                mouse_delta.1 as f32 * delta.as_secs_f32() * Self::CAMERA_ROTATION_SPEED;
 
             self.camera.angle_x = self
                 .camera
@@ -139,6 +148,7 @@ impl<'gl> DuckApp<'gl> {
     pub fn render(&self) {
         self.clear();
         self.render_duck();
+        self.render_water();
     }
 
     fn clear(&self) {
@@ -159,6 +169,8 @@ impl<'gl> DuckApp<'gl> {
 
         self.duck_mesh.draw();
     }
+
+    fn render_water(&self) {}
 
     pub fn control_ui(&mut self, ui: &mut imgui::Ui) {
         ui.window("Control")
