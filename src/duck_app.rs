@@ -43,6 +43,7 @@ pub struct DuckApp<'gl> {
     duck_path: BezierBSpline,
     duck_progress: f32,
     duck_speed: f32,
+    duck_drift: bool,
 
     water_mesh: GlMesh<'gl>,
     water_texture: WaterTexture<'gl>,
@@ -126,6 +127,7 @@ impl<'gl> DuckApp<'gl> {
             ),
             duck_progress: 0.0,
             duck_speed: Self::DEFAULT_DUCK_SPEED,
+            duck_drift: false,
 
             skybox_mesh: GlMesh::new(gl, &skybox_mesh),
             skybox_texture: GlCubeTexture::new(gl, &skybox_textures),
@@ -226,7 +228,9 @@ impl<'gl> DuckApp<'gl> {
     }
 
     fn update_duck(&mut self, delta: Duration) {
-        self.duck_progress += delta.as_secs_f32() * self.duck_speed;
+        let speed_multiplier = if self.duck_drift { 2.0 } else { 1.0 };
+
+        self.duck_progress += speed_multiplier * delta.as_secs_f32() * self.duck_speed;
 
         if self.duck_progress >= 1.0 {
             self.add_new_path_point();
@@ -234,19 +238,33 @@ impl<'gl> DuckApp<'gl> {
 
         let position = self.duck_path.value(self.duck_progress);
         let tangent = self.duck_path.tangent(self.duck_progress);
-        let angle = f32::atan2(tangent.x, tangent.z) + std::f32::consts::FRAC_PI_2;
+        let angle = if self.duck_drift {
+            f32::atan2(tangent.z, tangent.x)
+        } else {
+            f32::atan2(tangent.x, tangent.z)
+        } + std::f32::consts::FRAC_PI_2;
 
-        self.duck_mtx = transforms::translate(position.coords)
-            * transforms::rotate_y(angle)
-            * transforms::uniform_scale(Self::DUCK_SCALE);
+        self.duck_mtx = if self.duck_drift {
+            transforms::translate(position.coords)
+                * transforms::rotate_y(angle)
+                * transforms::rotate_x(angle / 4.0)
+                * transforms::rotate_z(angle / 4.0)
+                * transforms::uniform_scale(Self::DUCK_SCALE)
+        } else {
+            transforms::translate(position.coords)
+                * transforms::rotate_y(angle)
+                * transforms::uniform_scale(Self::DUCK_SCALE)
+        };
 
         let water_pos = (position / Self::ENVIRONMENT_SCALE + Vector3::new(0.5, 0.5, 0.5))
             * Self::WATER_SAMPLES as f32;
 
+        let disturbance_multiplier = if self.duck_drift { 50.0 } else { 1.0 };
+
         self.water_texture.disturb(
             water_pos.x.round() as isize,
             water_pos.z.round() as isize,
-            Self::DUCK_DISTURBANCE,
+            disturbance_multiplier * Self::DUCK_DISTURBANCE,
         );
     }
 
@@ -313,7 +331,17 @@ impl<'gl> DuckApp<'gl> {
         );
         self.light_uniforms(program);
 
+        program.uniform_i32("texture_sampler", 0);
+        unsafe {
+            self.gl.active_texture(glow::TEXTURE0);
+        }
         self.water_texture.normal_texture().bind();
+
+        program.uniform_i32("skybox_sampler", 1);
+        unsafe {
+            self.gl.active_texture(glow::TEXTURE1);
+        }
+        self.skybox_texture.bind();
         self.water_mesh.draw();
     }
 
@@ -377,6 +405,7 @@ impl<'gl> DuckApp<'gl> {
 
     fn duck_control(&mut self, ui: &imgui::Ui) {
         ui.slider("Duck speed", 0.0, 5.0, &mut self.duck_speed);
+        ui.checkbox("Duck drift", &mut self.duck_drift);
     }
 
     pub fn handle_event(&mut self, event: &Event<()>) {

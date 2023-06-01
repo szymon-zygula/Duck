@@ -148,17 +148,17 @@ impl<'gl> GlCubeTexture<'gl> {
         self.bind();
 
         unsafe {
-            for i in 0..6 {
+            for (idx, texture) in textures.iter().enumerate() {
                 self.gl.tex_image_2d(
-                    glow::TEXTURE_CUBE_MAP_POSITIVE_X + i as u32,
+                    glow::TEXTURE_CUBE_MAP_POSITIVE_X + idx as u32,
                     0,
                     format as i32,
-                    textures[i].image.width() as i32,
-                    textures[i].image.height() as i32,
+                    texture.image.width() as i32,
+                    texture.image.height() as i32,
                     0,
                     format,
                     glow::UNSIGNED_BYTE,
-                    Some(textures[i].image.as_bytes()),
+                    Some(texture.image.as_bytes()),
                 );
             }
 

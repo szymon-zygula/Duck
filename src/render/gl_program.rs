@@ -73,21 +73,28 @@ impl<'gl> GlProgram<'gl> {
 
     pub fn uniform_f32(&self, name: &str, data: f32) {
         unsafe {
-            let location = self.gl.get_uniform_location(self.handle, name).unwrap();
+            let location = self.gl.get_uniform_location(self.handle, name).expect(name);
             self.gl.uniform_1_f32(Some(&location), data);
         }
     }
 
     pub fn uniform_u32(&self, name: &str, data: u32) {
         unsafe {
-            let location = self.gl.get_uniform_location(self.handle, name).unwrap();
+            let location = self.gl.get_uniform_location(self.handle, name).expect(name);
             self.gl.uniform_1_u32(Some(&location), data);
+        }
+    }
+
+    pub fn uniform_i32(&self, name: &str, data: i32) {
+        unsafe {
+            let location = self.gl.get_uniform_location(self.handle, name).expect(name);
+            self.gl.uniform_1_i32(Some(&location), data);
         }
     }
 
     pub fn uniform_3_f32(&self, name: &str, x: f32, y: f32, z: f32) {
         unsafe {
-            let location = self.gl.get_uniform_location(self.handle, name).unwrap();
+            let location = self.gl.get_uniform_location(self.handle, name).expect(name);
             self.gl.uniform_3_f32(Some(&location), x, y, z);
         }
     }
