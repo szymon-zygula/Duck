@@ -1,9 +1,12 @@
 #version 430
 
-uniform sampler2D texture_sampler;
+uniform float light_intensity;
+uniform samplerCube texture_sampler;
+
+in vec3 tex_dir;
 
 out vec4 color;
 
 void main() {
-    color = vec4(0.2, 0.8, 0.4, 1.0);
+    color = light_intensity * texture(texture_sampler, tex_dir);
 }

@@ -1,5 +1,6 @@
 use image::{DynamicImage, RgbaImage};
 
+#[derive(Debug)]
 pub struct Texture {
     pub image: DynamicImage,
 }

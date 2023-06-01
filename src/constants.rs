@@ -13,3 +13,12 @@ pub const CLEAR_COLOR: ColorAlpha = ColorAlpha {
 
 pub const DUCK_MODEL_PATH: &str = "models/duck.txt";
 pub const DUCK_TEXTURE_PATH: &str = "textures/ducktex.jpg";
+
+pub const SKYBOX_TEXTURE_PATHS: [&str; 6] = [
+    "textures/right.jpg",
+    "textures/left.jpg",
+    "textures/top.jpg",
+    "textures/bottom.jpg",
+    "textures/front.jpg",
+    "textures/back.jpg",
+];

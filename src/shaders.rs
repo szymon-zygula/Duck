@@ -5,7 +5,7 @@ const SHADERS_PATH: &str = "shaders/";
 const SHADERS_EXTENSION: &str = "glsl";
 
 pub fn create_shader_manager(gl: &glow::Context) -> ShaderManager {
-    let simple_vert = shader(gl, "simple_vert", glow::VERTEX_SHADER);
+    let cube_vert = shader(gl, "cube_vert", glow::VERTEX_SHADER);
     let duck_vert = shader(gl, "duck_vert", glow::VERTEX_SHADER);
     let water_vert = shader(gl, "water_vert", glow::VERTEX_SHADER);
 
@@ -24,7 +24,7 @@ pub fn create_shader_manager(gl: &glow::Context) -> ShaderManager {
         ),
         (
             "skybox",
-            GlProgram::with_shaders(gl, &[&simple_vert, &cube_frag]),
+            GlProgram::with_shaders(gl, &[&cube_vert, &cube_frag]),
         ),
     ])
 }

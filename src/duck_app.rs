@@ -6,8 +6,13 @@ use crate::{
     mouse::MouseState,
     primitives::vertex::SimpleVertex,
     render::{
-        gl_drawable::GlDrawable, gl_mesh::GlMesh, gl_program::GlProgram, gl_texture::GlTexture,
-        mesh::Mesh, shader_manager::ShaderManager, texture::Texture,
+        gl_drawable::GlDrawable,
+        gl_mesh::GlMesh,
+        gl_program::GlProgram,
+        gl_texture::{GlCubeTexture, GlTexture},
+        mesh::Mesh,
+        shader_manager::ShaderManager,
+        texture::Texture,
     },
     shaders,
     water_texture::WaterTexture,
@@ -40,6 +45,7 @@ pub struct DuckApp<'gl> {
     water_mtx: Matrix4<f32>,
 
     skybox_mesh: GlMesh<'gl>,
+    skybox_texture: GlCubeTexture<'gl>,
     skybox_mtx: Matrix4<f32>,
 
     light_position: Vector3<f32>,
@@ -71,7 +77,14 @@ impl<'gl> DuckApp<'gl> {
         let duck_texture = GlTexture::new(gl, &duck_texture);
 
         let water_mesh = Mesh::<SimpleVertex>::rect();
+
         let skybox_mesh = Mesh::<SimpleVertex>::inner_cube();
+        let skybox_textures: [Texture; 6] = SKYBOX_TEXTURE_PATHS
+            .iter()
+            .map(|path| Texture::from_file(Path::new(path)))
+            .collect::<Vec<Texture>>()
+            .try_into()
+            .unwrap();
 
         let environment_transform = transforms::uniform_scale(Self::ENVIRONMENT_SCALE)
             * transforms::translate(Vector3::new(-0.5, 0.0, -0.5));
@@ -98,8 +111,8 @@ impl<'gl> DuckApp<'gl> {
             water_mtx: transforms::translate(Vector3::new(0.0, -2.5, 0.0)) * environment_transform,
 
             skybox_mesh: GlMesh::new(gl, &skybox_mesh),
-            skybox_mtx: transforms::translate(Vector3::new(0.0, -5.0, 0.0))
-                * environment_transform,
+            skybox_texture: GlCubeTexture::new(gl, &skybox_textures),
+            skybox_mtx: transforms::translate(Vector3::new(0.0, -7.5, 0.0)) * environment_transform,
 
             light_position: Self::DEFAULT_LIGHT_POSITION,
             light_intensity: Self::DEFAULT_LIGHT_INTENSITY,
@@ -246,7 +259,9 @@ impl<'gl> DuckApp<'gl> {
         program.enable();
         program.uniform_matrix_4_f32("model_transform", &self.skybox_mtx);
         self.basic_camera_uniforms(program);
+        program.uniform_f32("light_intensity", self.light_intensity);
 
+        self.skybox_texture.bind();
         self.skybox_mesh.draw();
     }
 
