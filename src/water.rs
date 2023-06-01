@@ -56,17 +56,17 @@ impl Water {
     pub fn normal(&self, x: isize, y: isize) -> Vector3<f32> {
         let x_tangent = Vector3::new(
             Self::PATCH_SIDE_LEN / self.width as f32,
-            0.0,
             0.5 * (self.height(x - 1, y) - self.height(x + 1, y)),
-        );
-
-        let y_tangent = Vector3::new(
             0.0,
-            Self::PATCH_SIDE_LEN / self.width as f32,
-            0.5 * (self.height(x, y - 1) - self.height(x, y + 1)),
         );
 
-        Vector3::cross(&x_tangent, &y_tangent).normalize()
+        let z_tangent = Vector3::new(
+            0.0,
+            0.5 * (self.height(x, y - 1) - self.height(x, y + 1)),
+            Self::PATCH_SIDE_LEN / self.width as f32,
+        );
+
+        Vector3::cross(&z_tangent, &x_tangent).normalize()
     }
 
     fn normal_rgba(&self, x: isize, y: isize) -> Rgba<u8> {
@@ -96,9 +96,14 @@ impl Water {
         0.95 * f32::min(1.0, 5.0 * border_distance)
     }
 
-    fn a_coeff(&self, delta_secs: f32) -> f32 {
+    fn delta(&self) -> f32 {
+        1.0 / self.width as f32
+    }
+
+    fn a_coeff(&self) -> f32 {
         let derivative_step = self.derivative_step();
-        self.wave_speed * self.wave_speed * delta_secs * delta_secs
+        let delta = self.delta();
+        self.wave_speed * self.wave_speed * delta * delta
             / (derivative_step * derivative_step)
     }
 
@@ -113,10 +118,9 @@ impl Water {
             + self.height(x + 1, y)
     }
 
-    pub fn update(&mut self, delta: Duration) {
+    pub fn update(&mut self) {
         // In theory, this should be constant
-        let delta = delta.as_secs_f32();
-        let a = self.a_coeff(delta);
+        let a = self.a_coeff();
         let b = Self::b_coeff(a);
 
         for x in 0..(self.width as isize) {

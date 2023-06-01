@@ -77,7 +77,7 @@ impl Vertex for SimpleVertex {
                 3,
                 glow::FLOAT,
                 false,
-                std::mem::size_of::<DuckVertex>() as i32,
+                std::mem::size_of::<SimpleVertex>() as i32,
                 0,
             );
             gl.enable_vertex_attrib_array(0);

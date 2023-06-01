@@ -1,5 +1,7 @@
 #version 430
 
+uniform vec3 light_position;
+uniform float light_intensity;
 uniform sampler2D texture_sampler;
 
 in VS_OUT {

@@ -26,7 +26,7 @@ fn main() {
         }
         Event::MainEventsCleared => window.request_redraw(),
         Event::RedrawRequested(_) => {
-            duck_app.update(delta);
+            duck_app.update(delta, window.imgui_using_mouse());
 
             duck_app.render();
 

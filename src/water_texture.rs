@@ -1,5 +1,4 @@
 use crate::{render::gl_texture::GlTexture, water::Water};
-use std::time::Duration;
 
 pub struct WaterTexture<'gl> {
     water: Water,
@@ -19,13 +18,17 @@ impl<'gl> WaterTexture<'gl> {
         &mut self.water.wave_speed
     }
 
-    pub fn update(&mut self, delta: Duration) {
-        self.water.update(delta);
+    pub fn update(&mut self) {
+        self.water.update();
         let texture = self.water.normal_texture();
         self.normal_texture.load(&texture)
     }
 
     pub fn normal_texture(&self) -> &GlTexture {
         &self.normal_texture
+    }
+
+    pub fn disturb(&mut self, x: isize, y: isize, height: f32) {
+        self.water.disturb(x, y, height);
     }
 }
