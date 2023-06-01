@@ -17,7 +17,7 @@ out VS_OUT {
 void main() {
     vs_out.position = (model_transform * vec4(position, 1.0f)).xyz;
 
-    vs_out.normal = normal;
+    vs_out.normal = normalize((transpose(inverse(model_transform)) * vec4(normal, 0.0)).xyz);
     vs_out.tex = tex;
 
     gl_Position =
