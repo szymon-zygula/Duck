@@ -119,7 +119,7 @@ impl Mesh<SimpleVertex> {
             Triangle([1, 5, 4]),
             // Top
             Triangle([4, 6, 7]),
-            Triangle([4, 6, 5]),
+            Triangle([4, 5, 6]),
         ];
 
         Self {

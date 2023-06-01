@@ -39,6 +39,9 @@ pub struct DuckApp<'gl> {
     water_texture: WaterTexture<'gl>,
     water_mtx: Matrix4<f32>,
 
+    skybox_mesh: GlMesh<'gl>,
+    skybox_mtx: Matrix4<f32>,
+
     light_position: Vector3<f32>,
     light_intensity: f32,
 
@@ -58,6 +61,8 @@ impl<'gl> DuckApp<'gl> {
     const DEFAULT_LIGHT_POSITION: Vector3<f32> = Vector3::new(0.0, 1.0, 0.0);
     const DEFAULT_LIGHT_INTENSITY: f32 = 1.0;
 
+    const ENVIRONMENT_SCALE: f32 = 10.0;
+
     pub fn init(gl: &'gl glow::Context) -> Self {
         let duck = Mesh::from_file(Path::new(DUCK_MODEL_PATH));
         let duck_mesh = GlMesh::new(gl, &duck);
@@ -66,6 +71,10 @@ impl<'gl> DuckApp<'gl> {
         let duck_texture = GlTexture::new(gl, &duck_texture);
 
         let water_mesh = Mesh::<SimpleVertex>::rect();
+        let skybox_mesh = Mesh::<SimpleVertex>::inner_cube();
+
+        let environment_transform = transforms::uniform_scale(Self::ENVIRONMENT_SCALE)
+            * transforms::translate(Vector3::new(-0.5, 0.0, -0.5));
 
         Self::init_gl(gl);
 
@@ -86,9 +95,11 @@ impl<'gl> DuckApp<'gl> {
 
             water_mesh: GlMesh::new(gl, &water_mesh),
             water_texture: WaterTexture::new(gl, Self::WATER_SAMPLES, Self::DEFAULT_WAVE_SPEED),
-            water_mtx: transforms::translate(Vector3::new(0.0, -2.5, 0.0))
-                * transforms::uniform_scale(10.0)
-                * transforms::translate(Vector3::new(-0.5, 0.0, -0.5)),
+            water_mtx: transforms::translate(Vector3::new(0.0, -2.5, 0.0)) * environment_transform,
+
+            skybox_mesh: GlMesh::new(gl, &skybox_mesh),
+            skybox_mtx: transforms::translate(Vector3::new(0.0, -5.0, 0.0))
+                * environment_transform,
 
             light_position: Self::DEFAULT_LIGHT_POSITION,
             light_intensity: Self::DEFAULT_LIGHT_INTENSITY,
@@ -182,12 +193,6 @@ impl<'gl> DuckApp<'gl> {
         self.last_mouse_position = self.mouse.position();
     }
 
-    pub fn render(&self) {
-        self.clear();
-        self.render_duck();
-        self.render_water();
-    }
-
     fn clear(&self) {
         unsafe {
             self.gl
@@ -195,12 +200,18 @@ impl<'gl> DuckApp<'gl> {
         }
     }
 
+    pub fn render(&self) {
+        self.clear();
+        self.render_duck();
+        self.render_water();
+        self.render_skybox();
+    }
+
     fn render_duck(&self) {
         let program = self.shader_manager.program("duck");
         program.enable();
         program.uniform_matrix_4_f32("model_transform", &self.duck_mtx);
-        program.uniform_matrix_4_f32("view_transform", &self.camera.view_transform());
-        program.uniform_matrix_4_f32("projection_transform", &self.camera.projection_transform());
+        self.basic_camera_uniforms(program);
         program.uniform_3_f32(
             "camera_position",
             self.camera.position.x,
@@ -217,8 +228,7 @@ impl<'gl> DuckApp<'gl> {
         let program = self.shader_manager.program("water");
         program.enable();
         program.uniform_matrix_4_f32("model_transform", &self.water_mtx);
-        program.uniform_matrix_4_f32("view_transform", &self.camera.view_transform());
-        program.uniform_matrix_4_f32("projection_transform", &self.camera.projection_transform());
+        self.basic_camera_uniforms(program);
         program.uniform_3_f32(
             "camera_position",
             self.camera.position.x,
@@ -229,6 +239,20 @@ impl<'gl> DuckApp<'gl> {
 
         self.water_texture.normal_texture().bind();
         self.water_mesh.draw();
+    }
+
+    fn render_skybox(&self) {
+        let program = self.shader_manager.program("skybox");
+        program.enable();
+        program.uniform_matrix_4_f32("model_transform", &self.skybox_mtx);
+        self.basic_camera_uniforms(program);
+
+        self.skybox_mesh.draw();
+    }
+
+    fn basic_camera_uniforms(&self, program: &GlProgram) {
+        program.uniform_matrix_4_f32("view_transform", &self.camera.view_transform());
+        program.uniform_matrix_4_f32("projection_transform", &self.camera.projection_transform());
     }
 
     fn light_uniforms(&self, program: &GlProgram) {
