@@ -88,4 +88,43 @@ impl Mesh<SimpleVertex> {
             triangles,
         }
     }
+
+    pub fn inner_cube() -> Self {
+        let vertices = vec![
+            SimpleVertex::new(0.0, 0.0, 0.0),
+            SimpleVertex::new(1.0, 0.0, 0.0),
+            SimpleVertex::new(1.0, 0.0, 1.0),
+            SimpleVertex::new(0.0, 0.0, 1.0),
+            SimpleVertex::new(0.0, 1.0, 0.0),
+            SimpleVertex::new(1.0, 1.0, 0.0),
+            SimpleVertex::new(1.0, 1.0, 1.0),
+            SimpleVertex::new(0.0, 1.0, 1.0),
+        ];
+
+        let triangles = vec![
+            // Bottom
+            Triangle([0, 2, 1]),
+            Triangle([0, 3, 2]),
+            // Left
+            Triangle([0, 4, 7]),
+            Triangle([0, 7, 3]),
+            // Right
+            Triangle([1, 2, 5]),
+            Triangle([2, 6, 5]),
+            // Front
+            Triangle([2, 7, 6]),
+            Triangle([2, 3, 7]),
+            // Back
+            Triangle([1, 4, 0]),
+            Triangle([1, 5, 4]),
+            // Top
+            Triangle([4, 6, 7]),
+            Triangle([4, 6, 5]),
+        ];
+
+        Self {
+            vertices,
+            triangles,
+        }
+    }
 }
