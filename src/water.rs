@@ -1,7 +1,6 @@
 use crate::{render::texture::Texture, utils};
 use image::{GenericImage, Rgba};
 use nalgebra::Vector3;
-use std::time::Duration;
 
 pub struct Water {
     width: usize,

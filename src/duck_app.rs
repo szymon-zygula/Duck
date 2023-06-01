@@ -201,7 +201,13 @@ impl<'gl> DuckApp<'gl> {
         program.uniform_matrix_4_f32("model_transform", &self.duck_mtx);
         program.uniform_matrix_4_f32("view_transform", &self.camera.view_transform());
         program.uniform_matrix_4_f32("projection_transform", &self.camera.projection_transform());
-        // self.light_uniforms(program);
+        program.uniform_3_f32(
+            "camera_position",
+            self.camera.position.x,
+            self.camera.position.y,
+            self.camera.position.z,
+        );
+        self.light_uniforms(program);
 
         self.duck_texture.bind();
         self.duck_mesh.draw();
