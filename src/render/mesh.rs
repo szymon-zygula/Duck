@@ -70,13 +70,18 @@ impl Mesh<DuckVertex> {
 impl Mesh<SimpleVertex> {
     pub fn rect() -> Self {
         let vertices = vec![
-            SimpleVertex(Point3::new(0.0, 0.0, 0.0)),
-            SimpleVertex(Point3::new(1.0, 0.0, 0.0)),
-            SimpleVertex(Point3::new(1.0, 0.0, 1.0)),
-            SimpleVertex(Point3::new(0.0, 0.0, 1.0)),
+            SimpleVertex::new(0.0, 0.0, 0.0),
+            SimpleVertex::new(1.0, 0.0, 0.0),
+            SimpleVertex::new(1.0, 0.0, 1.0),
+            SimpleVertex::new(0.0, 0.0, 1.0),
         ];
 
-        let triangles = vec![Triangle([0, 1, 2]), Triangle([0, 2, 3])];
+        let triangles = vec![
+            Triangle([0, 2, 1]),
+            Triangle([0, 3, 2]),
+            Triangle([0, 2, 3]),
+            Triangle([0, 1, 2]),
+        ];
 
         Self {
             vertices,

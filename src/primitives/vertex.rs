@@ -64,8 +64,8 @@ impl Vertex for DuckVertex {
 pub struct SimpleVertex(pub Point3<f32>);
 
 impl SimpleVertex {
-    pub fn new(position: Point3<f32>) -> Self {
-        Self(position)
+    pub fn new(x: f32, y: f32, z: f32) -> Self {
+        Self(Point3::new(x, y, z))
     }
 }
 

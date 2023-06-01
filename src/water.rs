@@ -27,28 +27,30 @@ impl Water {
         }
     }
 
-    pub fn height(&self, x: isize, y: isize) -> f32 {
+    fn height_index(&self, x: isize, y: isize) -> usize {
         let x = x.clamp(0, self.width as isize - 1) as usize;
         let y = y.clamp(0, self.width as isize - 1) as usize;
-        self.heights[self.width * y + x]
+        self.width * y + x
+    }
+
+    pub fn height(&self, x: isize, y: isize) -> f32 {
+        let idx = self.height_index(x, y);
+        self.heights[idx]
     }
 
     fn height_mut(&mut self, x: isize, y: isize) -> &mut f32 {
-        let x = x.clamp(0, self.width as isize - 1) as usize;
-        let y = y.clamp(0, self.width as isize - 1) as usize;
-        &mut self.heights[self.width * y + x]
+        let idx = self.height_index(x, y);
+        &mut self.heights[idx]
     }
 
     pub fn height_swap(&self, x: isize, y: isize) -> f32 {
-        let x = x.clamp(0, self.width as isize - 1) as usize;
-        let y = y.clamp(0, self.width as isize - 1) as usize;
-        self.heights_swap[self.width * y + x]
+        let idx = self.height_index(x, y);
+        self.heights_swap[idx]
     }
 
     fn height_swap_mut(&mut self, x: isize, y: isize) -> &mut f32 {
-        let x = x.clamp(0, self.width as isize - 1) as usize;
-        let y = y.clamp(0, self.width as isize - 1) as usize;
-        &mut self.heights_swap[self.width * y + x]
+        let idx = self.height_index(x, y);
+        &mut self.heights_swap[idx]
     }
 
     pub fn normal(&self, x: isize, y: isize) -> Vector3<f32> {
