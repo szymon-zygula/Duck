@@ -1,4 +1,4 @@
-
+use itertools::Itertools;
 
 #[derive(Clone, Debug)]
 pub struct BernsteinPolynomial {
@@ -30,5 +30,21 @@ impl BernsteinPolynomial {
         }
 
         values[0]
+    }
+
+    pub fn derivative(&self, t: f32) -> f32 {
+        assert!(self.coeffs.len() >= 1);
+        let degree = self.coeffs.len() as f32;
+
+        // This is inefficient to do on every call to `derivative`
+        let derivative_coeffs: Vec<_> = self
+            .coeffs
+            .iter()
+            .tuple_windows()
+            .map(|(a0, a1)| degree * (-a0 + a1))
+            .collect();
+
+        let derivative = BernsteinPolynomial::with_coefficients(derivative_coeffs);
+        derivative.value(t)
     }
 }

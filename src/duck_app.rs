@@ -2,7 +2,7 @@ use crate::{
     camera::Camera,
     constants::*,
     keyboard::KeyboardState,
-    math::affine::transforms,
+    math::{affine::transforms, geometry::bezier::BezierBSpline},
     mouse::MouseState,
     primitives::vertex::SimpleVertex,
     render::{
@@ -22,7 +22,7 @@ use glutin::{
     dpi::PhysicalPosition,
     event::{Event, VirtualKeyCode, WindowEvent},
 };
-use nalgebra::{Matrix4, Vector3};
+use nalgebra::{Matrix4, Point3, Vector3};
 use rand::{distributions, rngs::ThreadRng, thread_rng, Rng};
 use std::{path::Path, time::Duration};
 
@@ -39,6 +39,10 @@ pub struct DuckApp<'gl> {
     duck_mesh: GlMesh<'gl>,
     duck_texture: GlTexture<'gl>,
     duck_mtx: Matrix4<f32>,
+
+    duck_path: BezierBSpline,
+    duck_progress: f32,
+    duck_speed: f32,
 
     water_mesh: GlMesh<'gl>,
     water_texture: WaterTexture<'gl>,
@@ -59,10 +63,15 @@ impl<'gl> DuckApp<'gl> {
     const CAMERA_ROTATION_SPEED: f32 = 0.5;
     const CAMERA_MOVEMENT_SPEED: f32 = 5.0;
 
+    const DEFAULT_DUCK_SPEED: f32 = 1.0;
+    const DUCK_SCALE: f32 = 0.01;
+    const DUCK_Y: f32 = -2.7;
+    const DUCK_DISTURBANCE: f32 = -0.3;
+
     const WATER_SAMPLES: usize = 256;
     const DEFAULT_WAVE_SPEED: f32 = 0.75;
     const RAIN_CHANCE: f32 = 1.3e-6;
-    const RAIN_DISTURBANCE: f32 = -0.10;
+    const RAIN_DISTURBANCE: f32 = -0.1;
 
     const DEFAULT_LIGHT_POSITION: Vector3<f32> = Vector3::new(0.0, 1.0, 0.0);
     const DEFAULT_LIGHT_INTENSITY: f32 = 1.0;
@@ -89,6 +98,8 @@ impl<'gl> DuckApp<'gl> {
         let environment_transform = transforms::uniform_scale(Self::ENVIRONMENT_SCALE)
             * transforms::translate(Vector3::new(-0.5, 0.0, -0.5));
 
+        let mut rng = thread_rng();
+
         Self::init_gl(gl);
 
         Self {
@@ -103,12 +114,18 @@ impl<'gl> DuckApp<'gl> {
 
             duck_mesh,
             duck_texture,
-            duck_mtx: transforms::translate(Vector3::new(0.0, -2.7, 0.0))
-                * transforms::uniform_scale(0.01),
+            duck_mtx: transforms::translate(Vector3::new(0.0, Self::DUCK_Y, 0.0))
+                * transforms::uniform_scale(Self::DUCK_SCALE),
 
             water_mesh: GlMesh::new(gl, &water_mesh),
             water_texture: WaterTexture::new(gl, Self::WATER_SAMPLES, Self::DEFAULT_WAVE_SPEED),
             water_mtx: transforms::translate(Vector3::new(0.0, -2.5, 0.0)) * environment_transform,
+
+            duck_path: BezierBSpline::through_points(
+                (0..4).map(|_| Self::random_path_point(&mut rng)).collect(),
+            ),
+            duck_progress: 0.0,
+            duck_speed: Self::DEFAULT_DUCK_SPEED,
 
             skybox_mesh: GlMesh::new(gl, &skybox_mesh),
             skybox_texture: GlCubeTexture::new(gl, &skybox_textures),
@@ -138,6 +155,8 @@ impl<'gl> DuckApp<'gl> {
         if !mouse_captured {
             self.update_view(delta);
         }
+
+        self.update_duck(delta);
     }
 
     fn update_water(&mut self) {
@@ -204,6 +223,50 @@ impl<'gl> DuckApp<'gl> {
         }
 
         self.last_mouse_position = self.mouse.position();
+    }
+
+    fn update_duck(&mut self, delta: Duration) {
+        self.duck_progress += delta.as_secs_f32() * self.duck_speed;
+
+        if self.duck_progress >= 1.0 {
+            self.add_new_path_point();
+        }
+
+        let position = self.duck_path.value(self.duck_progress);
+        let tangent = self.duck_path.tangent(self.duck_progress);
+        let angle = f32::atan2(tangent.x, tangent.z) + std::f32::consts::FRAC_PI_2;
+
+        self.duck_mtx = transforms::translate(position.coords)
+            * transforms::rotate_y(angle)
+            * transforms::uniform_scale(Self::DUCK_SCALE);
+
+        let water_pos = (position / Self::ENVIRONMENT_SCALE + Vector3::new(0.5, 0.5, 0.5))
+            * Self::WATER_SAMPLES as f32;
+
+        self.water_texture.disturb(
+            water_pos.x.round() as isize,
+            water_pos.z.round() as isize,
+            Self::DUCK_DISTURBANCE,
+        );
+    }
+
+    fn add_new_path_point(&mut self) {
+        self.duck_progress = self.duck_progress.fract();
+        let mut coeffs = self.duck_path.deboor_points();
+        coeffs.remove(0);
+        coeffs.push(Self::random_path_point(&mut self.rng));
+        self.duck_path = BezierBSpline::through_points(coeffs);
+    }
+
+    fn random_path_point(rng: &mut impl Rng) -> Point3<f32> {
+        let dist = distributions::Uniform::new(
+            -0.5 * Self::ENVIRONMENT_SCALE,
+            0.5 * Self::ENVIRONMENT_SCALE,
+        );
+
+        let x = rng.sample(dist);
+        let z = rng.sample(dist);
+        Point3::new(x, Self::DUCK_Y, z)
     }
 
     fn clear(&self) {
@@ -282,13 +345,14 @@ impl<'gl> DuckApp<'gl> {
 
     pub fn control_ui(&mut self, ui: &imgui::Ui) {
         ui.window("Control")
-            .size([400.0, 200.0], imgui::Condition::Once)
+            .size([400.0, 300.0], imgui::Condition::Once)
             .position([0.0, 0.0], imgui::Condition::Once)
             .build(|| {
                 ui.text("Duck environment control");
 
                 self.camera_control(ui);
                 self.light_control(ui);
+                self.duck_control(ui);
             });
     }
 
@@ -309,6 +373,10 @@ impl<'gl> DuckApp<'gl> {
         ui.slider("y", -5.0, 5.0, &mut self.light_position.y);
         ui.slider("z", -5.0, 5.0, &mut self.light_position.z);
         ui.slider("Light intensity", 0.0, 10.0, &mut self.light_intensity);
+    }
+
+    fn duck_control(&mut self, ui: &imgui::Ui) {
+        ui.slider("Duck speed", 0.0, 5.0, &mut self.duck_speed);
     }
 
     pub fn handle_event(&mut self, event: &Event<()>) {

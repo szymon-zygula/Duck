@@ -8,6 +8,7 @@ uniform sampler2D texture_sampler;
 in VS_OUT {
     vec3 position;
     vec3 normal;
+    vec3 tangent;
     vec2 tex;
 } fs_in;
 
@@ -18,18 +19,6 @@ const float diffuse_coeff = 0.8;
 const float specular_coeff = 0.5;
 const float specular_exp = 40.0;
 
-vec3 tangent1() {
-    vec3 v = fs_in.normal;
-    vec3 axis = normalize(vec3(0.0, v.z, -v.y));
-    return cross(axis, v) + dot(axis, v) * axis;
-}
-
-vec3 tangent2() {
-    vec3 v = fs_in.normal;
-    vec3 axis = normalize(vec3(fs_in.tex.y * 2.0 - 1.0, 0.0, 0.0));
-    return cross(axis, v) + dot(axis, v) * axis;
-}
-
 void main() {
     vec3 to_light = normalize(light_position - fs_in.position);
     vec3 to_observer = normalize(camera_position - fs_in.position);
@@ -37,7 +26,7 @@ void main() {
     vec3 halff = normalize(to_light + to_observer);
 
     float diffuse = diffuse_coeff * max(0.0, dot(fs_in.normal, to_light));
-    float dot_h_t = dot(halff, tangent1());
+    float dot_h_t = dot(halff, fs_in.tangent);
     float specular_cos = max(0.0, sqrt(1.0 - dot_h_t * dot_h_t));
     float specular = specular_coeff * pow(specular_cos, specular_exp);
 

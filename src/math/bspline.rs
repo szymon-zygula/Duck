@@ -34,15 +34,28 @@ impl CubicBSpline {
         bernsteins[1..deboor_points.len() - 2].to_vec()
     }
 
-    pub fn value(&self, t: f32) -> f32 {
-        let curve_idx = if t == 1.0 {
+    fn curve_idx(&self, t: f32) -> usize {
+        if t == 1.0 {
             self.bernsteins.len() - 1
         } else {
             (t * self.bernsteins.len() as f32).floor() as usize
-        };
+        }
+    }
 
-        let curve_t = self.bernsteins.len() as f32 * t - curve_idx as f32;
+    fn curve_t(&self, t: f32, curve_idx: usize) -> f32 {
+        self.bernsteins.len() as f32 * t - curve_idx as f32
+    }
+
+    pub fn value(&self, t: f32) -> f32 {
+        let curve_idx = self.curve_idx(t);
+        let curve_t = self.curve_t(t, curve_idx);
         self.bernsteins[curve_idx].value(curve_t)
+    }
+
+    pub fn derivative(&self, t: f32) -> f32 {
+        let curve_idx = self.curve_idx(t);
+        let curve_t = self.curve_t(t, curve_idx);
+        self.bernsteins[curve_idx].derivative(curve_t)
     }
 
     pub fn bernstein_values(&self) -> Vec<f32> {
